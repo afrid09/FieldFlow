@@ -88,3 +88,6 @@ Set these in your environment or `.env` files for each service.
 ## Kubernetes/Helm
 - Base manifests are in `infra/k8s/`.
 - Helm chart scaffold is in `helm/fieldflow/`.
+
+## Secrets Management (AWS Secrets Manager + External Secrets)
+- See `docs/secrets-management.md` for setup details.

@@ -32,9 +32,15 @@ spec:
             - name: PORT
               value: "3001"
             - name: DATABASE_URL
-              value: postgres://postgres:postgres@postgres:5432/fieldflow
+              valueFrom:
+                secretKeyRef:
+                  name: fieldflow-secrets
+                  key: DATABASE_URL
             - name: AUTH_JWT_SECRET
-              value: supersecret
+              valueFrom:
+                secretKeyRef:
+                  name: fieldflow-secrets
+                  key: AUTH_JWT_SECRET
             - name: AUTH_TOKEN_TTL
               value: 7d
             - name: ALLOW_PUBLIC_REGISTER

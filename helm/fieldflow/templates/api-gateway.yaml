@@ -36,4 +36,17 @@ spec:
             - name: READ_SERVICE_URL
               value: http://read-service:3003
             - name: AUTH_JWT_SECRET
-              value: {{ .Values.env.authJwtSecret | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: fieldflow-secrets
+                  key: AUTH_JWT_SECRET
+            - name: INTERNAL_EVENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: fieldflow-secrets
+                  key: INTERNAL_EVENT_SECRET
+            - name: WS_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: fieldflow-secrets
+                  key: WS_AUTH_TOKEN

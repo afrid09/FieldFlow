@@ -17,4 +17,7 @@ spec:
           image: fieldflow/enrichment-service:latest
           env:
             - name: DATABASE_URL
-              value: postgres://postgres:postgres@postgres:5432/fieldflow
+              valueFrom:
+                secretKeyRef:
+                  name: fieldflow-secrets
+                  key: DATABASE_URL

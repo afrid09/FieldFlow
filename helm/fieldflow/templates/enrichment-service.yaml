@@ -17,4 +17,7 @@ spec:
           image: {{ .Values.images.enrichmentService }}
           env:
             - name: DATABASE_URL
-              value: postgres://{{ .Values.postgres.user }}:{{ .Values.postgres.password }}@postgres:5432/{{ .Values.postgres.database }}
+              valueFrom:
+                secretKeyRef:
+                  name: fieldflow-secrets
+                  key: DATABASE_URL

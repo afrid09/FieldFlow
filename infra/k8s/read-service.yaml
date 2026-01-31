@@ -32,8 +32,14 @@ spec:
             - name: PORT
               value: "3003"
             - name: DATABASE_URL
-              value: postgres://postgres:postgres@postgres:5432/fieldflow
+              valueFrom:
+                secretKeyRef:
+                  name: fieldflow-secrets
+                  key: DATABASE_URL
             - name: AUTH_JWT_SECRET
-              value: supersecret
+              valueFrom:
+                secretKeyRef:
+                  name: fieldflow-secrets
+                  key: AUTH_JWT_SECRET
             - name: GATEWAY_URL
               value: http://api-gateway:3000
