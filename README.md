@@ -1,0 +1,68 @@
+# FieldFlow
+
+FieldFlow is a multi-service agriculture management app with a Next.js frontend, Express services, and a PostGIS-backed database.
+
+## Services
+- `services/api-gateway` - API gateway + WebSocket fan-out
+- `services/command-service` - write APIs and auth endpoints
+- `services/read-service` - read APIs and geo queries
+- `frontend` - Next.js UI
+
+## Quick Start
+1. Configure environment variables (see below).
+2. Start the stack (Docker or local).
+3. Open the frontend and sign in.
+
+## Environment Variables
+Set these in your environment or `.env` files for each service.
+
+### API Gateway
+- `PORT` (default: 3000)
+- `COMMAND_SERVICE_URL` (default: `http://command-service:3001`)
+- `READ_SERVICE_URL` (default: `http://read-service:3003`)
+- `AUTH_JWT_SECRET` (required)
+- `INTERNAL_EVENT_SECRET` (optional, secures `/internal/events`)
+- `WS_AUTH_TOKEN` (optional, secures `/ws`)
+
+### Command Service
+- `PORT` (default: 3001)
+- `DATABASE_URL` (default: `postgres://postgres:postgres@postgres:5432/fieldflow`)
+- `AUTH_JWT_SECRET` (required)
+- `AUTH_TOKEN_TTL` (default: `7d`)
+- `ALLOW_PUBLIC_REGISTER` (`true` to allow public registration)
+- `GATEWAY_URL` (default: `http://api-gateway:3000`)
+- `INTERNAL_EVENT_SECRET` (optional)
+
+### Read Service
+- `PORT` (default: 3003)
+- `DATABASE_URL` (default: `postgres://postgres:postgres@postgres:5432/fieldflow`)
+- `AUTH_JWT_SECRET` (required)
+- `GATEWAY_URL` (default: `http://api-gateway:3000`)
+- `INTERNAL_EVENT_SECRET` (optional)
+
+### Frontend
+- `NEXT_PUBLIC_API_URL` (default: `http://localhost:3000`)
+- `NEXT_PUBLIC_WS_URL` (optional override for websocket base)
+- `NEXT_PUBLIC_WS_TOKEN` (optional, must match `WS_AUTH_TOKEN`)
+
+## Auth
+### Endpoints
+- `POST /api/auth/login` `{ email, password }`
+- `POST /api/auth/register` `{ email, fullName, password, role? }`
+
+### Roles
+- `admin`: full access
+- `manager`: can create farmer accounts
+- `farmer`: read/write only their own fields
+
+### Demo Credentials
+- Email: `demo@fieldflow.com`
+- Password: `demo123`
+
+## Frontend Routes
+- `/login`
+- `/register`
+
+## Notes
+- If `ALLOW_PUBLIC_REGISTER` is `false`, only admin/manager tokens can create users.
+- Geo endpoints use PostGIS indexes (bbox, polygon, nearby, nearest).
