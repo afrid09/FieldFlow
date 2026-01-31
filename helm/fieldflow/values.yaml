@@ -1,0 +1,24 @@
+images:
+  apiGateway: fieldflow/api-gateway:latest
+  commandService: fieldflow/command-service:latest
+  readService: fieldflow/read-service:latest
+  frontend: fieldflow/frontend:latest
+  postgres: postgis/postgis:15-3.4
+  enrichmentService: fieldflow/enrichment-service:latest
+
+replicas:
+  apiGateway: 1
+  commandService: 1
+  readService: 1
+  frontend: 1
+  enrichmentService: 1
+
+postgres:
+  user: postgres
+  password: postgres
+  database: fieldflow
+  storage: 10Gi
+
+env:
+  authJwtSecret: supersecret
+  gatewayUrl: http://api-gateway:3000

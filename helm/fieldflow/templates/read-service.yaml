@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: read-service
+spec:
+  ports:
+    - port: 3003
+      targetPort: 3003
+  selector:
+    app: read-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: read-service
+spec:
+  replicas: {{ .Values.replicas.readService }}
+  selector:
+    matchLabels:
+      app: read-service
+  template:
+    metadata:
+      labels:
+        app: read-service
+    spec:
+      containers:
+        - name: read-service
+          image: {{ .Values.images.readService }}
+          ports:
+            - containerPort: 3003
+          env:
+            - name: PORT
+              value: "3003"
+            - name: DATABASE_URL
+              value: postgres://{{ .Values.postgres.user }}:{{ .Values.postgres.password }}@postgres:5432/{{ .Values.postgres.database }}
+            - name: AUTH_JWT_SECRET
+              value: {{ .Values.env.authJwtSecret | quote }}
+            - name: GATEWAY_URL
+              value: {{ .Values.env.gatewayUrl | quote }}

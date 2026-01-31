@@ -3,6 +3,11 @@ import { Pool } from 'pg';
 import { z } from 'zod';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import helmet from 'helmet';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
+import pinoHttp from 'pino-http';
+import client from 'prom-client';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -12,13 +17,60 @@ const INTERNAL_EVENT_SECRET = process.env.INTERNAL_EVENT_SECRET;
 const AUTH_JWT_SECRET = process.env.AUTH_JWT_SECRET;
 const AUTH_TOKEN_TTL = process.env.AUTH_TOKEN_TTL || '7d';
 const ALLOW_PUBLIC_REGISTER = process.env.ALLOW_PUBLIC_REGISTER === 'true';
+const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
+const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60000);
+const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 300);
+
+const httpLogger = pinoHttp({ level: process.env.LOG_LEVEL || 'info' });
 
 // Database connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgres://postgres:postgres@postgres:5432/fieldflow',
 });
 
-app.use(express.json());
+app.set('trust proxy', 1);
+app.use(helmet());
+app.use(
+  cors({
+    origin: CORS_ORIGIN === '*' ? true : CORS_ORIGIN.split(','),
+  })
+);
+app.use(express.json({ limit: '1mb' }));
+app.use(httpLogger);
+
+const limiter = rateLimit({
+  windowMs: Number.isFinite(RATE_LIMIT_WINDOW_MS) ? RATE_LIMIT_WINDOW_MS : 60000,
+  max: Number.isFinite(RATE_LIMIT_MAX) ? RATE_LIMIT_MAX : 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(limiter);
+
+const metricsRegister = new client.Registry();
+client.collectDefaultMetrics({ register: metricsRegister });
+const httpRequestsTotal = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Total HTTP requests',
+  labelNames: ['method', 'route', 'status'],
+  registers: [metricsRegister],
+});
+const httpRequestDuration = new client.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'HTTP request duration in seconds',
+  labelNames: ['method', 'route', 'status'],
+  registers: [metricsRegister],
+});
+
+app.use((req, res, next) => {
+  const start = process.hrtime.bigint();
+  res.on('finish', () => {
+    const durationSeconds = Number(process.hrtime.bigint() - start) / 1e9;
+    const route = req.route?.path ? String(req.route.path) : req.path;
+    httpRequestsTotal.inc({ method: req.method, route, status: res.statusCode });
+    httpRequestDuration.observe({ method: req.method, route, status: res.statusCode }, durationSeconds);
+  });
+  next();
+});
 
 type Role = 'admin' | 'manager' | 'farmer';
 type AuthUser = { userId: string; role: Role; email?: string };
@@ -202,6 +254,12 @@ app.get('/health', async (_req: Request, res: Response) => {
   } catch (err) {
     res.status(500).json({ status: 'unhealthy', error: (err as Error).message });
   }
+});
+
+// Metrics
+app.get('/metrics', async (_req: Request, res: Response) => {
+  res.set('Content-Type', metricsRegister.contentType);
+  res.end(await metricsRegister.metrics());
 });
 
 // Auth endpoints

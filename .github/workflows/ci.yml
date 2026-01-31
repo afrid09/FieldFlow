@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Type-check frontend
+        working-directory: frontend
+        run: npm run type-check
+
+      - name: Install api-gateway deps
+        working-directory: services/api-gateway
+        run: npm ci
+
+      - name: Type-check api-gateway
+        working-directory: services/api-gateway
+        run: npx tsc --noEmit
+
+      - name: Install command-service deps
+        working-directory: services/command-service
+        run: npm ci
+
+      - name: Type-check command-service
+        working-directory: services/command-service
+        run: npx tsc --noEmit
+
+      - name: Install read-service deps
+        working-directory: services/read-service
+        run: npm ci
+
+      - name: Type-check read-service
+        working-directory: services/read-service
+        run: npx tsc --noEmit

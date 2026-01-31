@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enrichment-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: enrichment-service
+  template:
+    metadata:
+      labels:
+        app: enrichment-service
+    spec:
+      containers:
+        - name: enrichment-service
+          image: fieldflow/enrichment-service:latest
+          env:
+            - name: DATABASE_URL
+              value: postgres://postgres:postgres@postgres:5432/fieldflow

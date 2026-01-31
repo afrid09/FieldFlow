@@ -4,6 +4,10 @@ import cors from 'cors';
 import http from 'http';
 import WebSocket, { WebSocketServer } from 'ws';
 import jwt from 'jsonwebtoken';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import pinoHttp from 'pino-http';
+import client from 'prom-client';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,12 +17,58 @@ const READ_SERVICE_URL = process.env.READ_SERVICE_URL || 'http://read-service:30
 const INTERNAL_EVENT_SECRET = process.env.INTERNAL_EVENT_SECRET;
 const WS_AUTH_TOKEN = process.env.WS_AUTH_TOKEN;
 const AUTH_JWT_SECRET = process.env.AUTH_JWT_SECRET;
+const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
+const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60000);
+const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 300);
+
+const httpLogger = pinoHttp({ level: process.env.LOG_LEVEL || 'info' });
 
 type Role = 'admin' | 'manager' | 'farmer';
 type AuthUser = { userId: string; role: Role; email?: string };
 
-app.use(cors());
-app.use(express.json());
+app.set('trust proxy', 1);
+app.use(helmet());
+app.use(
+  cors({
+    origin: CORS_ORIGIN === '*' ? true : CORS_ORIGIN.split(','),
+  })
+);
+app.use(express.json({ limit: '1mb' }));
+app.use(httpLogger);
+
+const limiter = rateLimit({
+  windowMs: Number.isFinite(RATE_LIMIT_WINDOW_MS) ? RATE_LIMIT_WINDOW_MS : 60000,
+  max: Number.isFinite(RATE_LIMIT_MAX) ? RATE_LIMIT_MAX : 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(limiter);
+
+const metricsRegister = new client.Registry();
+client.collectDefaultMetrics({ register: metricsRegister });
+const httpRequestsTotal = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Total HTTP requests',
+  labelNames: ['method', 'route', 'status'],
+  registers: [metricsRegister],
+});
+const httpRequestDuration = new client.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'HTTP request duration in seconds',
+  labelNames: ['method', 'route', 'status'],
+  registers: [metricsRegister],
+});
+
+app.use((req, res, next) => {
+  const start = process.hrtime.bigint();
+  res.on('finish', () => {
+    const durationSeconds = Number(process.hrtime.bigint() - start) / 1e9;
+    const route = req.route?.path ? String(req.route.path) : req.path;
+    httpRequestsTotal.inc({ method: req.method, route, status: res.statusCode });
+    httpRequestDuration.observe({ method: req.method, route, status: res.statusCode }, durationSeconds);
+  });
+  next();
+});
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
@@ -51,6 +101,12 @@ app.get('/', (req, res) => res.send('FieldFlow API Gateway'));
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'healthy' }));
+
+// Metrics
+app.get('/metrics', async (_req, res) => {
+  res.set('Content-Type', metricsRegister.contentType);
+  res.end(await metricsRegister.metrics());
+});
 
 const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (!AUTH_JWT_SECRET) {

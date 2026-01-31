@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enrichment-service
+spec:
+  replicas: {{ .Values.replicas.enrichmentService }}
+  selector:
+    matchLabels:
+      app: enrichment-service
+  template:
+    metadata:
+      labels:
+        app: enrichment-service
+    spec:
+      containers:
+        - name: enrichment-service
+          image: {{ .Values.images.enrichmentService }}
+          env:
+            - name: DATABASE_URL
+              value: postgres://{{ .Values.postgres.user }}:{{ .Values.postgres.password }}@postgres:5432/{{ .Values.postgres.database }}

@@ -66,3 +66,25 @@ Set these in your environment or `.env` files for each service.
 ## Notes
 - If `ALLOW_PUBLIC_REGISTER` is `false`, only admin/manager tokens can create users.
 - Geo endpoints use PostGIS indexes (bbox, polygon, nearby, nearest).
+
+## Migrations
+- Run migrations with `npm run migrate` in `services/command-service`.
+- Docker Compose includes a `db-migrate` service to apply migrations on startup.
+
+## Observability
+- Each service exposes `/metrics` for Prometheus-style metrics.
+- Logs are structured via `pino`.
+
+## TLS
+- Nginx terminates TLS and proxies to the API gateway.
+- Generate dev certificates with `infra/nginx/generate-self-signed.sh`.
+
+## Backups
+- Docker Compose includes `db-backup`, writing daily `pg_dump` files to `./backups`.
+
+## CI/CD
+- GitHub Actions workflow runs type checks for frontend and services.
+
+## Kubernetes/Helm
+- Base manifests are in `infra/k8s/`.
+- Helm chart scaffold is in `helm/fieldflow/`.
