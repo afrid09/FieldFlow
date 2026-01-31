@@ -1,0 +1,5 @@
+-- Production seed data (minimal)
+-- Optionally create an initial admin user here.
+-- Leave empty by default to avoid assumptions.
+-- Production seed data
+-- Intentionally minimal; create users via the admin workflow.

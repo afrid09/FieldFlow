@@ -12,7 +12,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   api-gateway:
     build: ./services/api-gateway
@@ -77,6 +76,20 @@ services:
     command: ["npm", "run", "migrate"]
     depends_on:
       - postgres
+    restart: "no"
+
+  db-seed-dev:
+    build: ./services/command-service
+    container_name: fieldflow-db-seed-dev
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/fieldflow
+      SEED_ENV: dev
+      SEEDS_DIR: /app/infra/seeds
+    volumes:
+      - ./infra/seeds:/app/infra/seeds:ro
+    command: ["npm", "run", "seed:dev"]
+    depends_on:
+      - db-migrate
     restart: "no"
 
   read-service:

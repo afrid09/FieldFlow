@@ -70,6 +70,14 @@ Set these in your environment or `.env` files for each service.
 ## Migrations
 - Run migrations with `npm run migrate` in `services/command-service`.
 - Docker Compose includes a `db-migrate` service to apply migrations on startup.
+- Roll back the latest migration with `npm run migrate:down`.
+- Dev seeds are in `infra/seeds/dev.sql`, production seeds in `infra/seeds/prod.sql`.
+- Run seeds with `npm run seed:dev` or `npm run seed:prod` in `services/command-service`.
+- Roll back the last migration with `npm run migrate:down`.
+
+## Seeds
+- Dev seed: `SEED_FILE=../../infra/seeds/dev.sql npm run seed` (from `services/command-service`).
+- Prod seed: `SEED_FILE=../../infra/seeds/prod.sql npm run seed` (minimal data).
 
 ## Observability
 - Each service exposes `/metrics` for Prometheus-style metrics.

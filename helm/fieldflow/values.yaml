@@ -20,5 +20,6 @@ postgres:
   storage: 10Gi
 
 env:
-  authJwtSecret: supersecret
   gatewayUrl: http://api-gateway:3000
+  awsRegion: us-east-1
+  secretsManagerKey: fieldflow/app
