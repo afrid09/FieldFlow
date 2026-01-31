@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { 
   MapPin, 
@@ -23,6 +24,14 @@ import RecentActivity from '@/components/RecentActivity';
 export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_role');
+    localStorage.removeItem('auth_user_id');
+    router.push('/login');
+  };
 
   // Fetch dashboard stats
   const { data: stats } = useQuery<DashboardStats>({
@@ -77,6 +86,13 @@ export default function Dashboard() {
                     {notifications?.filter((n) => !n.isRead).length}
                   </span>
                 )}
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Logout
               </button>
               
               <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2">

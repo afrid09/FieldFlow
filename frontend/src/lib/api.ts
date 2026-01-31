@@ -43,6 +43,11 @@ export const fieldApi = {
   update: (id: string, data: any) => api.put(`/api/fields/${id}`, data),
   delete: (id: string) => api.delete(`/api/fields/${id}`),
   getSummary: (id: string) => api.get(`/api/fields/${id}/summary`),
+  getByBbox: (params: { minLat: number; minLon: number; maxLat: number; maxLon: number; limit?: number }) =>
+    api.get('/api/fields/bbox', { params }),
+  getByNearby: (params: { lat: number; lon: number; radiusMeters: number; limit?: number }) =>
+    api.get('/api/fields/nearby', { params }),
+  getByPolygon: (data: { polygon: any; limit?: number }) => api.post('/api/fields/polygon', data),
 };
 
 export const soilApi = {
@@ -72,4 +77,10 @@ export const notificationApi = {
 export const dashboardApi = {
   getStats: () => api.get('/api/dashboard/stats'),
   getRecentActivity: () => api.get('/api/dashboard/activity'),
+};
+
+export const authApi = {
+  login: (data: { email: string; password: string }) => api.post('/api/auth/login', data),
+  register: (data: { email: string; fullName: string; password: string; role?: string }) =>
+    api.post('/api/auth/register', data),
 };

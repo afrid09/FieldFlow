@@ -14,6 +14,7 @@ CREATE TABLE users (
     user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
     full_name VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255),
     role VARCHAR(50) NOT NULL DEFAULT 'farmer',
     organization VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -322,8 +323,8 @@ CREATE TRIGGER calculate_field_area_trigger
 -- =====================================================
 
 -- Insert test user
-INSERT INTO users (user_id, email, full_name, role, organization) VALUES
-('00000000-0000-0000-0000-000000000001', 'demo@fieldflow.com', 'Demo Farmer', 'farmer', 'FieldFlow Demo Farms');
+INSERT INTO users (user_id, email, full_name, role, organization, password_hash) VALUES
+('00000000-0000-0000-0000-000000000001', 'demo@fieldflow.com', 'Demo Farmer', 'farmer', 'FieldFlow Demo Farms', '$2a$10$srpvK1tWeAIgajEVOmh84OMIcP6l/guCHPFm56E0n70O5/7uxdZla');
 
 -- Insert test fields
 INSERT INTO fields (field_id, user_id, field_name, description, location, area_hectares, crop_type, status) VALUES
