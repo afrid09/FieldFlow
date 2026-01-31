@@ -1,0 +1,76 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgis/postgis:15-3.4
+    container_name: fieldflow-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fieldflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  api-gateway:
+    build: ./services/api-gateway
+    container_name: fieldflow-api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      COMMAND_SERVICE_URL: http://command-service:3001
+      READ_SERVICE_URL: http://read-service:3003
+      AUTH_JWT_SECRET: supersecret
+      INTERNAL_EVENT_SECRET: internal-secret
+      WS_AUTH_TOKEN: ws-secret
+    depends_on:
+      - command-service
+      - read-service
+
+  command-service:
+    build: ./services/command-service
+    container_name: fieldflow-command-service
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/fieldflow
+      AUTH_JWT_SECRET: supersecret
+      AUTH_TOKEN_TTL: 7d
+      ALLOW_PUBLIC_REGISTER: "true"
+      GATEWAY_URL: http://api-gateway:3000
+      INTERNAL_EVENT_SECRET: internal-secret
+    depends_on:
+      - postgres
+
+  read-service:
+    build: ./services/read-service
+    container_name: fieldflow-read-service
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/fieldflow
+      AUTH_JWT_SECRET: supersecret
+      GATEWAY_URL: http://api-gateway:3000
+      INTERNAL_EVENT_SECRET: internal-secret
+    depends_on:
+      - postgres
+
+  frontend:
+    build: ./frontend
+    container_name: fieldflow-frontend
+    ports:
+      - "3002:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+      NEXT_PUBLIC_WS_URL: http://localhost:3000
+      NEXT_PUBLIC_WS_TOKEN: ws-secret
+    depends_on:
+      - api-gateway
+
+volumes:
+  postgres_data:
