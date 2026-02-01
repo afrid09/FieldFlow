@@ -1,4 +1,4 @@
-import './otel';
+import './otel'; // OpenTelemetry tracing (disabled if OTEL_ENABLED=false)
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import cors from 'cors';
@@ -27,6 +27,7 @@ const httpLogger = pinoHttp({ level: process.env.LOG_LEVEL || 'info' });
 type Role = 'admin' | 'manager' | 'farmer';
 type AuthUser = { userId: string; role: Role; email?: string };
 
+// Trust proxy headers (required for correct client IPs behind ingress)
 app.set('trust proxy', 1);
 app.use(helmet());
 app.use(
@@ -37,6 +38,7 @@ app.use(
 app.use(express.json({ limit: '1mb' }));
 app.use(httpLogger);
 
+// Basic rate limit for all requests at the gateway edge.
 const limiter = rateLimit({
   windowMs: Number.isFinite(RATE_LIMIT_WINDOW_MS) ? RATE_LIMIT_WINDOW_MS : 60000,
   max: Number.isFinite(RATE_LIMIT_MAX) ? RATE_LIMIT_MAX : 300,
@@ -45,6 +47,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Metrics registry for Prometheus.
 const metricsRegister = new client.Registry();
 client.collectDefaultMetrics({ register: metricsRegister });
 const httpRequestsTotal = new client.Counter({
@@ -60,6 +63,7 @@ const httpRequestDuration = new client.Histogram({
   registers: [metricsRegister],
 });
 
+// Track request counts and durations for RED metrics.
 app.use((req, res, next) => {
   const start = process.hrtime.bigint();
   res.on('finish', () => {
@@ -71,10 +75,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// HTTP server + WS server share the same port.
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
 const wsClients = new Set<WebSocket>();
 
+// Realtime WS connections; optional shared token gate.
 wss.on('connection', (socket, request) => {
   if (WS_AUTH_TOKEN) {
     const requestUrl = new URL(request.url ?? '', 'http://localhost');
@@ -89,6 +95,7 @@ wss.on('connection', (socket, request) => {
   socket.on('close', () => wsClients.delete(socket));
 });
 
+// Broadcast internal events to all connected realtime clients.
 const broadcast = (payload: unknown) => {
   const message = JSON.stringify(payload);
   for (const client of wsClients) {
@@ -109,6 +116,7 @@ app.get('/metrics', async (_req, res) => {
   res.end(await metricsRegister.metrics());
 });
 
+// JWT auth gate for protected API routes.
 const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (!AUTH_JWT_SECRET) {
     return res.status(500).json({ error: 'AUTH_JWT_SECRET is not configured' });
@@ -137,6 +145,7 @@ const authMiddleware = (req: express.Request, res: express.Response, next: expre
   }
 };
 
+// Proxy helper that injects authenticated user headers downstream.
 const authedProxy = (target: string) =>
   createProxyMiddleware({
     target,

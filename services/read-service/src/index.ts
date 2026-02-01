@@ -1,4 +1,4 @@
-import './otel';
+import './otel'; // OpenTelemetry tracing (disabled if OTEL_ENABLED=false)
 import express, { Request, Response } from 'express';
 import { Pool } from 'pg';
 import jwt from 'jsonwebtoken';
@@ -24,6 +24,7 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgres://postgres:postgres@postgres:5432/fieldflow',
 });
 
+// Trust proxy headers (correct client IPs behind ingress)
 app.set('trust proxy', 1);
 app.use(helmet());
 app.use(
@@ -34,6 +35,7 @@ app.use(
 app.use(express.json({ limit: '1mb' }));
 app.use(httpLogger);
 
+// Basic per-instance rate limiting.
 const limiter = rateLimit({
   windowMs: Number.isFinite(RATE_LIMIT_WINDOW_MS) ? RATE_LIMIT_WINDOW_MS : 60000,
   max: Number.isFinite(RATE_LIMIT_MAX) ? RATE_LIMIT_MAX : 300,
@@ -42,6 +44,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Metrics registry for Prometheus.
 const metricsRegister = new client.Registry();
 client.collectDefaultMetrics({ register: metricsRegister });
 const httpRequestsTotal = new client.Counter({
@@ -57,6 +60,7 @@ const httpRequestDuration = new client.Histogram({
   registers: [metricsRegister],
 });
 
+// Track request counts and durations for RED metrics.
 app.use((req, res, next) => {
   const start = process.hrtime.bigint();
   res.on('finish', () => {
@@ -74,6 +78,7 @@ type Res = Response;
 type Role = 'admin' | 'manager' | 'farmer';
 type AuthUser = { userId: string; role: Role; email?: string };
 
+// Decode JWT without enforcing roles (used by auth middleware).
 const getAuthUser = (req: Request): AuthUser | null => {
   if (!AUTH_JWT_SECRET) {
     return null;
@@ -95,6 +100,7 @@ const getAuthUser = (req: Request): AuthUser | null => {
   };
 };
 
+// Enforce JWT authentication for protected routes.
 const authMiddleware = (req: Request, res: Response, next: () => void) => {
   if (!AUTH_JWT_SECRET) {
     return res.status(500).json({ error: 'AUTH_JWT_SECRET is not configured' });
@@ -113,6 +119,7 @@ const authMiddleware = (req: Request, res: Response, next: () => void) => {
 
 const getUser = (req: Request) => (req as Request & { user: AuthUser }).user;
 
+// Best-effort event emission to gateway for realtime UI invalidation.
 const emitGatewayEvent = async (event: Record<string, unknown>) => {
   try {
     await fetch(`${GATEWAY_URL}/internal/events`, {
