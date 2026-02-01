@@ -104,3 +104,13 @@ Set these in your environment or `.env` files for each service.
 
 ## Secrets Management (AWS Secrets Manager + External Secrets)
 - See `docs/secrets-management.md` for setup details.
+
+## Production Templates (Placeholders)
+- `infra/k8s/external-secrets/irsa-serviceaccount.yaml`
+- `infra/aws/iam/fieldflow-external-secrets-policy.json`
+- `infra/k8s/cert-manager-prod.yaml`
+- `infra/k8s/ingress-prod.yaml`
+- `infra/observability/alertmanager.yml`
+- `infra/k8s/restore-validation-cronjob.yaml`
+- `docs/runbooks/service-down.md`
+- `docs/runbooks/backup-failure.md`

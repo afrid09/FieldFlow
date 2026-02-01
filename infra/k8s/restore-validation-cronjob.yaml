@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fieldflow-restore-test
+spec:
+  schedule: "0 3 * * 0"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: restore-test
+              image: postgres:15
+              env:
+                - name: PGHOST
+                  value: postgres
+                - name: PGUSER
+                  value: postgres
+                - name: PGPASSWORD
+                  value: postgres
+                - name: PGDATABASE
+                  value: fieldflow
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "Restore test placeholder - update with real logic"
+                  exit 0
