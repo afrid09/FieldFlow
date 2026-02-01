@@ -2,20 +2,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fieldApi } from '@/lib/api';
 import { toast } from 'sonner';
+import type { Field, FieldSummary } from '@/types';
 
 export const useFields = () => {
   const queryClient = useQueryClient();
 
-  const { data: fields, isLoading, error } = useQuery({
+  const { data: fields, isLoading, error } = useQuery<FieldSummary[]>({
     queryKey: ['fields'],
     queryFn: async () => {
       const response = await fieldApi.getAll();
-      return response.data;
+      return response.data as FieldSummary[];
     },
   });
 
   const createField = useMutation({
-    mutationFn: (data: any) => fieldApi.create(data),
+    mutationFn: (data: Partial<Field>) => fieldApi.create(data),
     onSuccess: () => {
       // Refresh list and notify after create.
       queryClient.invalidateQueries({ queryKey: ['fields'] });
@@ -27,7 +28,7 @@ export const useFields = () => {
   });
 
   const updateField = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: Partial<Field> }) =>
       fieldApi.update(id, data),
     onSuccess: () => {
       // Refresh list and notify after update.
@@ -62,11 +63,11 @@ export const useFields = () => {
 };
 
 export const useField = (fieldId: string) => {
-  const { data: field, isLoading } = useQuery({
+  const { data: field, isLoading } = useQuery<FieldSummary>({
     queryKey: ['field', fieldId],
     queryFn: async () => {
       const response = await fieldApi.getById(fieldId);
-      return response.data;
+      return response.data as FieldSummary;
     },
     // Avoid request until we have an id.
     enabled: !!fieldId,

@@ -1,7 +1,7 @@
 'use client';
 // Purpose: Main dashboard UI.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { 
@@ -15,7 +15,7 @@ import {
   Filter
 } from 'lucide-react';
 import { dashboardApi, fieldApi, notificationApi } from '@/lib/api';
-import { DashboardStats, FieldSummary, Notification } from '@/types';
+import { DashboardStats, FieldSummary, Notification, Role } from '@/types';
 import FieldCard from '@/components/FieldCard';
 import StatsCard from '@/components/StatsCard';
 import NotificationPanel from '@/components/NotificationPanel';
@@ -25,7 +25,7 @@ import RecentActivity from '@/components/RecentActivity';
 export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
-  const [role, setRole] = useState<string | null>(null);
+  const [role, setRole] = useState<Role | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -66,8 +66,15 @@ export default function Dashboard() {
     },
   });
 
-  const filteredFields = fields?.filter((field) =>
-    field.fieldName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredFields = useMemo(
+    () =>
+      fields?.filter((field) => field.fieldName.toLowerCase().includes(searchTerm.toLowerCase())),
+    [fields, searchTerm]
+  );
+
+  const unreadCount = useMemo(
+    () => notifications?.filter((notification) => !notification.isRead).length ?? 0,
+    [notifications]
   );
 
   return (
@@ -95,9 +102,9 @@ export default function Dashboard() {
                 className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <Bell className="h-6 w-6" />
-                {(notifications?.filter((n) => !n.isRead).length ?? 0) > 0 && (
+                {unreadCount > 0 && (
                   <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                    {notifications?.filter((n) => !n.isRead).length}
+                    {unreadCount}
                   </span>
                 )}
               </button>

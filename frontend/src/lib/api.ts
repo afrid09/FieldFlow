@@ -3,6 +3,13 @@ import axios from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
+const getRequestId = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
 export const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -18,6 +25,10 @@ api.interceptors.request.use(
       if (token) {
         // Attach JWT so backend can authorize requests.
         config.headers.Authorization = `Bearer ${token}`;
+      }
+      if (!config.headers['x-request-id']) {
+        // Add request id for tracing across services.
+        config.headers['x-request-id'] = getRequestId();
       }
     }
     return config;

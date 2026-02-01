@@ -1,9 +1,13 @@
 // Purpose: Frontend module: index.
+export type Role = 'admin' | 'manager' | 'farmer';
+export type FieldStatus = 'active' | 'inactive' | 'harvested';
+export type NotificationSeverity = 'info' | 'warning' | 'error' | 'success';
+
 export interface User {
   userId: string;
   email: string;
   fullName: string;
-  role: string;
+  role: Role;
   organization?: string;
   createdAt: string;
   lastLogin?: string;
@@ -24,7 +28,7 @@ export interface Field {
   plantingDate?: string;
   expectedHarvestDate?: string;
   irrigationType?: string;
-  status: 'active' | 'inactive' | 'harvested';
+  status: FieldStatus;
   createdAt: string;
   updatedAt: string;
   metadata?: Record<string, any>;
@@ -80,7 +84,7 @@ export interface Notification {
   notificationType: string;
   title: string;
   message: string;
-  severity: 'info' | 'warning' | 'error' | 'success';
+  severity: NotificationSeverity;
   isRead: boolean;
   readAt?: string;
   actionUrl?: string;
