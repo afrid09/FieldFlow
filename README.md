@@ -6,6 +6,7 @@ FieldFlow is a multi-service agriculture management app with a Next.js frontend,
 - `services/api-gateway` - API gateway + WebSocket fan-out
 - `services/command-service` - write APIs and auth endpoints
 - `services/read-service` - read APIs and geo queries
+- `services/enrichment-service` - background analysis worker
 - `frontend` - Next.js UI
 
 ## Quick Start
@@ -39,6 +40,10 @@ Set these in your environment or `.env` files for each service.
 - `AUTH_JWT_SECRET` (required)
 - `GATEWAY_URL` (default: `http://api-gateway:3000`)
 - `INTERNAL_EVENT_SECRET` (optional)
+
+### Enrichment Service
+- `DATABASE_URL` (default: `postgres://postgres:postgres@postgres:5432/fieldflow`)
+- `ENRICHMENT_POLL_MS` (default: `10000`)
 
 ### Frontend
 - `NEXT_PUBLIC_API_URL` (default: `http://localhost:3000`)
