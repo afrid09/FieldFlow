@@ -1,3 +1,4 @@
+// Purpose: Frontend module: NotificationPanel.
 import { X, Bell, CheckCircle, AlertTriangle, Info } from 'lucide-react';
 import { Notification } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';

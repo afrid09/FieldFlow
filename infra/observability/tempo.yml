@@ -1,3 +1,4 @@
+# Purpose: Observability config: tempo.
 server:
   http_listen_port: 3200
 

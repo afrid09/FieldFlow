@@ -1,3 +1,4 @@
+# Purpose: Kubernetes manifest: pdb.
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:

@@ -1,3 +1,4 @@
+// Purpose: Read service: query APIs and geo filters.
 import './otel'; // OpenTelemetry tracing (disabled if OTEL_ENABLED=false)
 import express, { Request, Response } from 'express';
 import { Pool } from 'pg';

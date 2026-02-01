@@ -1,3 +1,4 @@
+# Purpose: Observability config: alert.rules.
 groups:
   - name: fieldflow-alerts
     rules:

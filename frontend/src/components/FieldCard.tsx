@@ -1,3 +1,4 @@
+// Purpose: Frontend module: FieldCard.
 import { MapPin, TrendingUp, Droplet, AlertCircle } from 'lucide-react';
 import { FieldSummary } from '@/types';
 import { motion } from 'framer-motion';

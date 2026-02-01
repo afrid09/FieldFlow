@@ -1,3 +1,4 @@
+# Purpose: Helm template: values.
 images:
   apiGateway: fieldflow/api-gateway:latest
   commandService: fieldflow/command-service:latest

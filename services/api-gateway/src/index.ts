@@ -1,3 +1,4 @@
+// Purpose: API gateway routing, auth, and realtime fan-out.
 import './otel'; // OpenTelemetry tracing (disabled if OTEL_ENABLED=false)
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';

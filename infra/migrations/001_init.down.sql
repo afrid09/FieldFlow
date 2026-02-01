@@ -1,3 +1,4 @@
+-- Purpose: Database migration.
 DROP VIEW IF EXISTS user_dashboard;
 DROP VIEW IF EXISTS field_summary;
 

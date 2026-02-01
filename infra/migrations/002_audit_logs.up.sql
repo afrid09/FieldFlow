@@ -1,3 +1,4 @@
+-- Purpose: Database migration.
 CREATE TABLE audit_logs (
     audit_log_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     actor_user_id UUID NOT NULL REFERENCES users(user_id),

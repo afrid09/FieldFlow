@@ -1,4 +1,5 @@
 'use client';
+// Purpose: Frontend module: RecentActivity.
 
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';

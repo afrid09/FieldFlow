@@ -1,4 +1,5 @@
 'use client';
+// Purpose: Map UI with geo filters.
 
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, FeatureGroup } from 'react-leaflet';
 import L from 'leaflet';

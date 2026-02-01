@@ -1,3 +1,4 @@
+# Purpose: Kubernetes manifest: backup-alert.
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:

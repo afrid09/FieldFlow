@@ -1,3 +1,4 @@
+# Purpose: Kubernetes manifest: restore-validation-cronjob.
 apiVersion: batch/v1
 kind: CronJob
 metadata:

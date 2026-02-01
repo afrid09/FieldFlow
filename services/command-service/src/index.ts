@@ -1,3 +1,4 @@
+// Purpose: Command service: auth, admin, and write APIs.
 import './otel'; // OpenTelemetry tracing (disabled if OTEL_ENABLED=false)
 import express, { Request, Response } from 'express';
 import { Pool } from 'pg';

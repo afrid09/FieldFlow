@@ -1,4 +1,5 @@
 'use client';
+// Purpose: Registration page UI.
 
 import { FormEvent, useState } from 'react';
 import Link from 'next/link';

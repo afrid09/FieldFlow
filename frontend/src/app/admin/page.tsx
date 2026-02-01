@@ -1,4 +1,5 @@
 'use client';
+// Purpose: Admin console UI.
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';

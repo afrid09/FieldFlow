@@ -1,3 +1,4 @@
+# Purpose: Helm template: frontend.
 apiVersion: v1
 kind: Service
 metadata:

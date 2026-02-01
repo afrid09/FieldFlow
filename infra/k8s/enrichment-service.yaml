@@ -1,3 +1,4 @@
+# Purpose: Kubernetes manifest: enrichment-service.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

@@ -1,3 +1,4 @@
+// Purpose: Service module: migrate.
 import fs from 'fs';
 import path from 'path';
 import { Pool } from 'pg';

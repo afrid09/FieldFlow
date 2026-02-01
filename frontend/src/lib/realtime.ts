@@ -1,3 +1,4 @@
+// Purpose: Realtime WebSocket bridge.
 import { QueryClient } from '@tanstack/react-query';
 
 const getWebSocketUrl = () => {

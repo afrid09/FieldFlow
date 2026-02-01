@@ -1,3 +1,4 @@
+# Purpose: Observability config: dashboards.
 apiVersion: 1
 
 providers:

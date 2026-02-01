@@ -1,3 +1,4 @@
+// Purpose: Frontend module: useFields.
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fieldApi } from '@/lib/api';
 import { toast } from 'sonner';

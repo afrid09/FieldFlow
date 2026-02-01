@@ -1,3 +1,4 @@
+# Purpose: Helm template: postgres.
 apiVersion: v1
 kind: Service
 metadata:

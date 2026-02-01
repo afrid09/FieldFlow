@@ -1,3 +1,4 @@
+// Purpose: Frontend module: index.
 export interface User {
   userId: string;
   email: string;

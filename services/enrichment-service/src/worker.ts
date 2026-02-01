@@ -1,3 +1,4 @@
+// Purpose: Background enrichment worker for analysis.
 import { Pool } from 'pg';
 
 // Database connection

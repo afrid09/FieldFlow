@@ -1,3 +1,4 @@
+# Purpose: Helm template: Chart.
 apiVersion: v2
 name: fieldflow
 description: FieldFlow Helm chart
