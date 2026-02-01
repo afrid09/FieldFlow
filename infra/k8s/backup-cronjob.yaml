@@ -11,7 +11,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: backup
-              image: postgres:15
+              image: amazon/aws-cli:2.15.48
               env:
                 - name: PGHOST
                   value: postgres
@@ -21,6 +21,22 @@ spec:
                   value: postgres
                 - name: PGDATABASE
                   value: fieldflow
+                - name: AWS_REGION
+                  value: us-east-1
+                - name: S3_BUCKET
+                  value: fieldflow-backups
+                - name: S3_PREFIX
+                  value: daily
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: aws-secrets-credentials
+                      key: AWS_ACCESS_KEY_ID
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: aws-secrets-credentials
+                      key: AWS_SECRET_ACCESS_KEY
               volumeMounts:
                 - name: backups
                   mountPath: /backups
@@ -30,6 +46,7 @@ spec:
                 - |
                   TIMESTAMP=$(date +%Y%m%d_%H%M%S)
                   pg_dump -Fc -f /backups/fieldflow_${TIMESTAMP}.dump
+                  aws s3 cp /backups/fieldflow_${TIMESTAMP}.dump s3://${S3_BUCKET}/${S3_PREFIX}/fieldflow_${TIMESTAMP}.dump
           volumes:
             - name: backups
               persistentVolumeClaim:

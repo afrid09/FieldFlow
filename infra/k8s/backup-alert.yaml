@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: backup-alerts
+spec:
+  groups:
+    - name: backups
+      rules:
+        - alert: BackupJobFailed
+          expr: kube_job_status_failed > 0
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Backup job failed"
+            description: "A Kubernetes backup job has failed."

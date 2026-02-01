@@ -13,8 +13,9 @@
   - 12 monthly
 
 ### Kubernetes
-- `infra/k8s/backup-cronjob.yaml` schedules nightly backups to a PVC.
-- For production, mount an off-site storage volume (S3, GCS, etc).
+- `infra/k8s/backup-cronjob.yaml` schedules nightly backups to a PVC and uploads to S3.
+- Configure `AWS_REGION`, `S3_BUCKET`, and credentials via `aws-secrets-credentials`.
+- `infra/k8s/backup-alert.yaml` adds a basic alert for failed backup jobs (requires Prometheus Operator).
 
 ## Restore Procedure
 1. Stop application services.
