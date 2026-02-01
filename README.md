@@ -102,6 +102,9 @@ Set these in your environment or `.env` files for each service.
 ## CI/CD
 - GitHub Actions workflow runs type checks for frontend and services.
 
+## Testing
+- See `docs/testing.md` for unit, integration, and E2E workflows.
+
 ## Kubernetes/Helm
 - Base manifests are in `infra/k8s/`.
 - Helm chart scaffold is in `helm/fieldflow/`.

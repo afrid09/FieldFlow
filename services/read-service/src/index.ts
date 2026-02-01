@@ -9,6 +9,7 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import pinoHttp from 'pino-http';
 import client from 'prom-client';
+import { isLatLon, parseLimit } from './geo';
 
 const app = express();
 const port = process.env.PORT || 3003;
@@ -149,16 +150,6 @@ const emitGatewayEvent = async (event: Record<string, unknown>) => {
 const toNumber = (value: unknown) => Number(value);
 const toOptionalNumber = (value: unknown) => (value === null || value === undefined ? undefined : Number(value));
 
-const parseLimit = (value: unknown, fallback: number, max: number) => {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return fallback;
-  }
-  return Math.min(parsed, max);
-};
-
-const isLatLon = (lat: number, lon: number) =>
-  Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
 
 const toFieldSummary = (row: any) => ({
   fieldId: row.field_id,

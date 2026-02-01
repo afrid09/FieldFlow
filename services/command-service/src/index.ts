@@ -4,8 +4,7 @@ import express, { Request, Response } from 'express';
 import { randomUUID } from 'crypto';
 import { Pool } from 'pg';
 import { z } from 'zod';
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
+import { comparePassword, getAuthUserFromToken, hashPassword, signToken, type AuthUser, type Role } from './auth';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
@@ -88,9 +87,6 @@ app.use((req, res, next) => {
   next();
 });
 
-type Role = 'admin' | 'manager' | 'farmer';
-type AuthUser = { userId: string; role: Role; email?: string };
-
 // Decode JWT without enforcing roles (used by auth endpoints).
 const getAuthUser = (req: Request): AuthUser | null => {
   if (!AUTH_JWT_SECRET) {
@@ -101,16 +97,7 @@ const getAuthUser = (req: Request): AuthUser | null => {
   if (!token) {
     return null;
   }
-  const payload = jwt.verify(token, AUTH_JWT_SECRET) as jwt.JwtPayload;
-  const role = payload.role as Role | undefined;
-  if (!payload.sub || !role) {
-    return null;
-  }
-  return {
-    userId: String(payload.sub),
-    role,
-    email: typeof payload.email === 'string' ? payload.email : undefined,
-  };
+  return getAuthUserFromToken(AUTH_JWT_SECRET, token);
 };
 
 // Enforce JWT authentication for protected routes.
@@ -248,16 +235,11 @@ const adminStatusSchema = z.object({
   isActive: z.boolean(),
 });
 
-const signToken = (user: { userId: string; role: Role; email?: string }) => {
+const signAuthToken = (user: AuthUser) => {
   if (!AUTH_JWT_SECRET) {
     throw new Error('AUTH_JWT_SECRET is not configured');
   }
-  // Encode role + email in JWT; subject is userId.
-  const options: jwt.SignOptions = {
-    subject: user.userId,
-    expiresIn: AUTH_TOKEN_TTL as jwt.SignOptions['expiresIn'],
-  };
-  return jwt.sign({ role: user.role, email: user.email }, AUTH_JWT_SECRET as jwt.Secret, options);
+  return signToken(AUTH_JWT_SECRET, AUTH_TOKEN_TTL, user);
 };
 
 // Write audit records for admin actions (best-effort).
@@ -331,7 +313,7 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
     if (!passwordHash) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    const ok = await bcrypt.compare(parsed.data.password, passwordHash);
+    const ok = await comparePassword(parsed.data.password, passwordHash);
     if (!ok) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -341,7 +323,7 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
       role: userRow.role,
       email: userRow.email,
     };
-    const token = signToken(authUser);
+    const token = signAuthToken(authUser);
     return res.json({
       token,
       user: {
@@ -404,7 +386,7 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
     if (existing.rows.length > 0) {
       return res.status(409).json({ error: 'User already exists' });
     }
-    const passwordHash = await bcrypt.hash(parsed.data.password, 10);
+    const passwordHash = await hashPassword(parsed.data.password);
     const role: Role = requestedRole;
     const result = await pool.query(
       `
@@ -415,7 +397,7 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
       [parsed.data.email, parsed.data.fullName, role, passwordHash]
     );
     const row = result.rows[0];
-    const token = signToken({ userId: row.user_id, role: row.role, email: row.email });
+    const token = signAuthToken({ userId: row.user_id, role: row.role, email: row.email });
     return res.status(201).json({
       token,
       user: {

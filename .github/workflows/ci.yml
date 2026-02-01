@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  unit-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +25,10 @@ jobs:
         working-directory: frontend
         run: npm run type-check
 
+      - name: Run frontend unit tests
+        working-directory: frontend
+        run: npm test -- --coverage
+
       - name: Install api-gateway deps
         working-directory: services/api-gateway
         run: npm ci
@@ -32,6 +36,10 @@ jobs:
       - name: Type-check api-gateway
         working-directory: services/api-gateway
         run: npx tsc --noEmit
+
+      - name: Run api-gateway unit tests
+        working-directory: services/api-gateway
+        run: npm test -- --coverage
 
       - name: Install command-service deps
         working-directory: services/command-service
@@ -41,6 +49,10 @@ jobs:
         working-directory: services/command-service
         run: npx tsc --noEmit
 
+      - name: Run command-service unit tests
+        working-directory: services/command-service
+        run: npm test -- --coverage
+
       - name: Install read-service deps
         working-directory: services/read-service
         run: npm ci
@@ -48,3 +60,111 @@ jobs:
       - name: Type-check read-service
         working-directory: services/read-service
         run: npx tsc --noEmit
+
+      - name: Run read-service unit tests
+        working-directory: services/read-service
+        run: npm test -- --coverage
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-coverage
+          path: |
+            frontend/coverage
+            services/api-gateway/coverage
+            services/command-service/coverage
+            services/read-service/coverage
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:15-3.3
+        env:
+          POSTGRES_DB: fieldflow_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U test_user -d fieldflow_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install command-service deps
+        working-directory: services/command-service
+        run: npm ci
+
+      - name: Run migrations
+        working-directory: services/command-service
+        env:
+          DATABASE_URL: postgres://test_user:test_pass@localhost:5433/fieldflow_test
+        run: npm run migrate
+
+      - name: Run command-service integration tests
+        working-directory: services/command-service
+        env:
+          TEST_DATABASE_URL: postgres://test_user:test_pass@localhost:5433/fieldflow_test
+          AUTH_JWT_SECRET: test-secret
+        run: npm test -- --runTestsByPath src/__tests__/integration/auth.integration.test.ts
+
+      - name: Install read-service deps
+        working-directory: services/read-service
+        run: npm ci
+
+      - name: Run read-service integration tests
+        working-directory: services/read-service
+        env:
+          TEST_DATABASE_URL: postgres://test_user:test_pass@localhost:5433/fieldflow_test
+          AUTH_JWT_SECRET: test-secret
+        run: npm test -- --runTestsByPath src/__tests__/integration/geo.integration.test.ts
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build and start services
+        run: docker compose -f docker-compose.e2e.yml up -d --build
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright
+        working-directory: frontend
+        run: npx playwright install --with-deps
+
+      - name: Wait for frontend
+        run: |
+          for i in {1..60}; do
+            curl -sSf http://localhost:3002 >/dev/null && exit 0
+            sleep 2
+          done
+          echo "Frontend did not start in time" && exit 1
+
+      - name: Run Playwright tests
+        working-directory: frontend
+        env:
+          E2E_BASE_URL: http://localhost:3002
+        run: npm run test:e2e
+
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            frontend/test-results
+            frontend/playwright-report

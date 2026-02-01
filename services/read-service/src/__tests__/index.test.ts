@@ -73,5 +73,7 @@ describe('read-service', () => {
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(1);
     expect(response.body[0].fieldId).toBe('field-1');
+    expect(query.mock.calls[0][0]).toContain('ST_DWithin');
+    expect(query.mock.calls[0][0]).toContain('FROM field_summary');
   });
 });
