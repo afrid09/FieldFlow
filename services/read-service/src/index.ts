@@ -1,3 +1,4 @@
+import './otel';
 import express, { Request, Response } from 'express';
 import { Pool } from 'pg';
 import jwt from 'jsonwebtoken';

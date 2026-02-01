@@ -82,6 +82,7 @@ Set these in your environment or `.env` files for each service.
 ## Observability
 - Each service exposes `/metrics` for Prometheus-style metrics.
 - Logs are structured via `pino`.
+ - See `docs/observability.md` for the full stack (Prometheus/Grafana/Loki/Tempo).
 
 ## TLS
 - Nginx terminates TLS and proxies to the API gateway.

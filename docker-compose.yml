@@ -29,6 +29,9 @@ services:
       RATE_LIMIT_WINDOW_MS: 60000
       RATE_LIMIT_MAX: 300
       LOG_LEVEL: info
+      OTEL_ENABLED: "true"
+      OTEL_SERVICE_NAME: api-gateway
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318/v1/traces
     depends_on:
       - command-service
       - read-service
@@ -62,6 +65,9 @@ services:
       RATE_LIMIT_WINDOW_MS: 60000
       RATE_LIMIT_MAX: 300
       LOG_LEVEL: info
+      OTEL_ENABLED: "true"
+      OTEL_SERVICE_NAME: command-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318/v1/traces
     depends_on:
       - postgres
 
@@ -107,6 +113,9 @@ services:
       RATE_LIMIT_WINDOW_MS: 60000
       RATE_LIMIT_MAX: 300
       LOG_LEVEL: info
+      OTEL_ENABLED: "true"
+      OTEL_SERVICE_NAME: read-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318/v1/traces
     depends_on:
       - postgres
 
@@ -121,6 +130,67 @@ services:
       NEXT_PUBLIC_WS_TOKEN: ws-secret
     depends_on:
       - api-gateway
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: fieldflow-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/observability/alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    depends_on:
+      - api-gateway
+      - command-service
+      - read-service
+
+  grafana:
+    image: grafana/grafana:10.4.5
+    container_name: fieldflow-grafana
+    ports:
+      - "3004:3000"
+    volumes:
+      - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+
+  loki:
+    image: grafana/loki:3.1.0
+    container_name: fieldflow-loki
+    ports:
+      - "3100:3100"
+    command: ["-config.file=/etc/loki/config.yml"]
+    volumes:
+      - ./infra/observability/loki.yml:/etc/loki/config.yml:ro
+
+  promtail:
+    image: grafana/promtail:3.1.0
+    container_name: fieldflow-promtail
+    volumes:
+      - ./infra/observability/promtail.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log:/var/log:ro
+    command: ["-config.file=/etc/promtail/config.yml"]
+    depends_on:
+      - loki
+
+  tempo:
+    image: grafana/tempo:2.5.0
+    container_name: fieldflow-tempo
+    ports:
+      - "3200:3200"
+      - "4318:4318"
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ./infra/observability/tempo.yml:/etc/tempo/tempo.yml:ro
 
   db-backup:
     image: postgres:15
