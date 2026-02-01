@@ -735,6 +735,10 @@ app.put('/api/notifications/:id/read', async (req: Req, res: Res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`✓ Read service listening on port ${port}`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`✓ Read service listening on port ${port}`);
+  });
+}
+
+export { app };

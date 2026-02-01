@@ -199,6 +199,10 @@ app.use('/api/fields', (req, res, next) => {
 // Proxy Read Routes (GET)
 app.use('/api', authedProxy(READ_SERVICE_URL));
 
-server.listen(port, () => {
-  console.log(`✓ API Gateway listening on port ${port}`);
-});
+if (require.main === module) {
+  server.listen(port, () => {
+    console.log(`✓ API Gateway listening on port ${port}`);
+  });
+}
+
+export { app, server };

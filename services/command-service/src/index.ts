@@ -915,6 +915,10 @@ app.post('/api/analysis/:fieldId/trigger', async (req: Request, res: Response) =
   }
 });
 
-app.listen(port, () => {
-  console.log(`✓ Command service listening on port ${port}`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`✓ Command service listening on port ${port}`);
+  });
+}
+
+export { app };
