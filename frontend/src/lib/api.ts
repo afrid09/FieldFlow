@@ -84,3 +84,11 @@ export const authApi = {
   register: (data: { email: string; fullName: string; password: string; role?: string }) =>
     api.post('/api/auth/register', data),
 };
+
+export const adminApi = {
+  getUsers: () => api.get('/api/admin/users'),
+  updateUserRole: (userId: string, role: string) => api.put(`/api/admin/users/${userId}/role`, { role }),
+  updateUserStatus: (userId: string, isActive: boolean) =>
+    api.put(`/api/admin/users/${userId}/status`, { isActive }),
+  getAuditLogs: () => api.get('/api/admin/audit'),
+};

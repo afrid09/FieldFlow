@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { 
@@ -24,7 +24,12 @@ import RecentActivity from '@/components/RecentActivity';
 export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    setRole(localStorage.getItem('auth_role'));
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
@@ -76,6 +81,14 @@ export default function Dashboard() {
             </div>
             
             <div className="flex items-center space-x-4">
+              {role === 'admin' && (
+                <button
+                  onClick={() => router.push('/admin')}
+                  className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Admin
+                </button>
+              )}
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"

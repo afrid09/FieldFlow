@@ -165,6 +165,8 @@ app.post('/internal/events', (req, res) => {
 
 // Auth endpoints
 app.use('/api/auth', authedProxy(COMMAND_SERVICE_URL));
+// Admin endpoints
+app.use('/api/admin', authedProxy(COMMAND_SERVICE_URL));
 
 // Protect API routes
 app.use('/api', (req, res, next) => {

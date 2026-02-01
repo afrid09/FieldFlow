@@ -222,6 +222,14 @@ const authRegisterSchema = z.object({
   role: z.enum(['admin', 'manager', 'farmer']).optional(),
 });
 
+const adminRoleSchema = z.object({
+  role: z.enum(['admin', 'manager', 'farmer']),
+});
+
+const adminStatusSchema = z.object({
+  isActive: z.boolean(),
+});
+
 const signToken = (user: { userId: string; role: Role; email?: string }) => {
   if (!AUTH_JWT_SECRET) {
     throw new Error('AUTH_JWT_SECRET is not configured');
@@ -231,6 +239,25 @@ const signToken = (user: { userId: string; role: Role; email?: string }) => {
     expiresIn: AUTH_TOKEN_TTL as jwt.SignOptions['expiresIn'],
   };
   return jwt.sign({ role: user.role, email: user.email }, AUTH_JWT_SECRET as jwt.Secret, options);
+};
+
+const logAudit = async (
+  actorUserId: string,
+  action: string,
+  targetUserId?: string,
+  payload?: Record<string, unknown>
+) => {
+  try {
+    await pool.query(
+      `
+        INSERT INTO audit_logs (actor_user_id, action, target_user_id, payload)
+        VALUES ($1, $2, $3, $4::jsonb)
+      `,
+      [actorUserId, action, targetUserId ?? null, JSON.stringify(payload ?? {})]
+    );
+  } catch (err) {
+    console.warn('Failed to write audit log:', err);
+  }
 };
 
 const assertFieldAccess = async (fieldId: string, user: AuthUser) => {
@@ -389,6 +416,132 @@ app.use('/api', (req, res, next) => {
     return next();
   }
   return authMiddleware(req, res, next);
+});
+
+// Admin: list users
+app.get('/api/admin/users', requireRole(['admin']), async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `
+        SELECT user_id, email, full_name, role, is_active, created_at
+        FROM users
+        ORDER BY created_at DESC
+      `
+    );
+    return res.json(
+      result.rows.map((row) => ({
+        userId: row.user_id,
+        email: row.email,
+        fullName: row.full_name,
+        role: row.role,
+        isActive: row.is_active,
+        createdAt: row.created_at,
+      }))
+    );
+  } catch (err) {
+    console.error('Error listing users:', err);
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// Admin: update user role
+app.put('/api/admin/users/:id/role', requireRole(['admin']), async (req: Request, res: Response) => {
+  const parsed = adminRoleSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid role payload', details: parsed.error.errors });
+  }
+  try {
+    const result = await pool.query(
+      `
+        UPDATE users
+        SET role = $2
+        WHERE user_id = $1
+        RETURNING user_id, email, full_name, role, is_active
+      `,
+      [req.params.id, parsed.data.role]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const actor = getUser(req);
+    void logAudit(actor.userId, 'USER_ROLE_UPDATED', req.params.id, { role: parsed.data.role });
+    return res.json({
+      userId: result.rows[0].user_id,
+      email: result.rows[0].email,
+      fullName: result.rows[0].full_name,
+      role: result.rows[0].role,
+      isActive: result.rows[0].is_active,
+    });
+  } catch (err) {
+    console.error('Error updating user role:', err);
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// Admin: activate/deactivate user
+app.put('/api/admin/users/:id/status', requireRole(['admin']), async (req: Request, res: Response) => {
+  const parsed = adminStatusSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid status payload', details: parsed.error.errors });
+  }
+  try {
+    const result = await pool.query(
+      `
+        UPDATE users
+        SET is_active = $2
+        WHERE user_id = $1
+        RETURNING user_id, email, full_name, role, is_active
+      `,
+      [req.params.id, parsed.data.isActive]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const actor = getUser(req);
+    void logAudit(actor.userId, 'USER_STATUS_UPDATED', req.params.id, { isActive: parsed.data.isActive });
+    return res.json({
+      userId: result.rows[0].user_id,
+      email: result.rows[0].email,
+      fullName: result.rows[0].full_name,
+      role: result.rows[0].role,
+      isActive: result.rows[0].is_active,
+    });
+  } catch (err) {
+    console.error('Error updating user status:', err);
+    return res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// Admin: audit logs
+app.get('/api/admin/audit', requireRole(['admin']), async (_req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `
+        SELECT a.audit_log_id, a.action, a.target_user_id, a.payload, a.created_at,
+               u.user_id as actor_id, u.email as actor_email
+        FROM audit_logs a
+        JOIN users u ON a.actor_user_id = u.user_id
+        ORDER BY a.created_at DESC
+        LIMIT 100
+      `
+    );
+    return res.json(
+      result.rows.map((row) => ({
+        auditLogId: row.audit_log_id,
+        action: row.action,
+        targetUserId: row.target_user_id,
+        payload: row.payload,
+        createdAt: row.created_at,
+        actor: {
+          userId: row.actor_id,
+          email: row.actor_email,
+        },
+      }))
+    );
+  } catch (err) {
+    console.error('Error listing audit logs:', err);
+    return res.status(500).json({ error: (err as Error).message });
+  }
 });
 
 // Create a new field

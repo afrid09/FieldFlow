@@ -62,6 +62,7 @@ Set these in your environment or `.env` files for each service.
 ## Frontend Routes
 - `/login`
 - `/register`
+- `/admin` (admin only)
 
 ## Notes
 - If `ALLOW_PUBLIC_REGISTER` is `false`, only admin/manager tokens can create users.
