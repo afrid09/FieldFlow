@@ -1,6 +1,7 @@
 // Purpose: Command service: auth, admin, and write APIs.
 import './otel'; // OpenTelemetry tracing (disabled if OTEL_ENABLED=false)
 import express, { Request, Response } from 'express';
+import { randomUUID } from 'crypto';
 import { Pool } from 'pg';
 import { z } from 'zod';
 import jwt from 'jsonwebtoken';
@@ -23,7 +24,10 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60000);
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 300);
 
-const httpLogger = pinoHttp({ level: process.env.LOG_LEVEL || 'info' });
+const httpLogger = pinoHttp({
+  level: process.env.LOG_LEVEL || 'info',
+  genReqId: (req) => (req.headers['x-request-id'] as string) || randomUUID(),
+});
 
 // Database connection
 const pool = new Pool({
@@ -38,6 +42,12 @@ app.use(
     origin: CORS_ORIGIN === '*' ? true : CORS_ORIGIN.split(','),
   })
 );
+app.use((req, res, next) => {
+  const requestId = (req.headers['x-request-id'] as string) || randomUUID();
+  res.setHeader('x-request-id', requestId);
+  (req as Request & { id?: string }).id = requestId;
+  next();
+});
 app.use(express.json({ limit: '1mb' }));
 app.use(httpLogger);
 
