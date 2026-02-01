@@ -16,6 +16,7 @@ api.interceptors.request.use(
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('auth_token');
       if (token) {
+        // Attach JWT so backend can authorize requests.
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
@@ -29,6 +30,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 && typeof window !== 'undefined') {
+      // Token expired/invalid: clear and redirect to login.
       localStorage.removeItem('auth_token');
       window.location.href = '/login';
     }

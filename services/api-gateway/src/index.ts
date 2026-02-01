@@ -135,6 +135,7 @@ const authMiddleware = (req: express.Request, res: express.Response, next: expre
     if (!payload.sub || !role) {
       return res.status(401).json({ error: 'Invalid token payload' });
     }
+    // Attach user context for downstream proxy headers.
     (req as express.Request & { user: AuthUser }).user = {
       userId: String(payload.sub),
       role,
@@ -156,6 +157,7 @@ const authedProxy = (target: string) =>
       if (!user) {
         return;
       }
+      // Forward user identity to downstream services for authZ checks.
       proxyReq.setHeader('x-user-id', user.userId);
       proxyReq.setHeader('x-user-role', user.role);
       if (user.email) {

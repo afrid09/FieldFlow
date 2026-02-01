@@ -284,6 +284,7 @@ app.get('/api/fields/nearby', async (req: Req, res: Res) => {
   const radiusMeters = Number(req.query.radiusMeters ?? 5000);
   const limit = parseLimit(req.query.limit, 50, 200);
   const user = getUser(req);
+  // Farmers can only query their own fields.
 
   if (!isLatLon(latitude, longitude) || !Number.isFinite(radiusMeters) || radiusMeters <= 0) {
     return res.status(400).json({ error: 'lat, lon, and radiusMeters must be valid numbers' });
@@ -325,6 +326,7 @@ app.get('/api/fields/bbox', async (req: Req, res: Res) => {
   const maxLon = Number(req.query.maxLon);
   const limit = parseLimit(req.query.limit, 200, 500);
   const user = getUser(req);
+  // Farmers can only query their own fields.
 
   if (![minLat, minLon, maxLat, maxLon].every(Number.isFinite)) {
     return res.status(400).json({ error: 'minLat, minLon, maxLat, and maxLon must be valid numbers' });
@@ -365,6 +367,7 @@ app.post('/api/fields/polygon', async (req: Req, res: Res) => {
   const polygon = req.body?.polygon;
   const limit = parseLimit(req.body?.limit, 200, 500);
   const user = getUser(req);
+  // Farmers can only query their own fields.
 
   if (!polygon) {
     return res.status(400).json({ error: 'polygon is required (GeoJSON Polygon or MultiPolygon)' });
@@ -403,6 +406,7 @@ app.get('/api/fields/nearest', async (req: Req, res: Res) => {
   const longitude = Number(req.query.lon);
   const limit = parseLimit(req.query.limit, 20, 200);
   const user = getUser(req);
+  // Farmers can only query their own fields.
 
   if (!isLatLon(latitude, longitude)) {
     return res.status(400).json({ error: 'lat and lon must be valid numbers' });

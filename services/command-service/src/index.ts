@@ -242,6 +242,7 @@ const signToken = (user: { userId: string; role: Role; email?: string }) => {
   if (!AUTH_JWT_SECRET) {
     throw new Error('AUTH_JWT_SECRET is not configured');
   }
+  // Encode role + email in JWT; subject is userId.
   const options: jwt.SignOptions = {
     subject: user.userId,
     expiresIn: AUTH_TOKEN_TTL as jwt.SignOptions['expiresIn'],
@@ -275,6 +276,7 @@ const assertFieldAccess = async (fieldId: string, user: AuthUser) => {
     return { ok: false as const, status: 404, error: 'Field not found' };
   }
   const ownerId = result.rows[0].user_id as string;
+  // Farmers are restricted to their own fields.
   if (user.role === 'farmer' && ownerId !== user.userId) {
     return { ok: false as const, status: 403, error: 'Forbidden' };
   }
@@ -562,6 +564,7 @@ app.post('/api/fields', async (req: Request, res: Response) => {
 
   const { fieldName, cropType, areaHectares, latitude, longitude, userId } = parsed.data;
   const authUser = getUser(req);
+  // Admins/managers may create fields for other users.
   if (authUser.role === 'farmer' && userId && userId !== authUser.userId) {
     return res.status(403).json({ error: 'Forbidden' });
   }

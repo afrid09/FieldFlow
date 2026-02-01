@@ -12,6 +12,7 @@ const getWebSocketUrl = () => {
   const wsUrl = new URL(`${wsBase}/ws`);
   const token = process.env.NEXT_PUBLIC_WS_TOKEN;
   if (token) {
+    // Optional shared token for WS auth.
     wsUrl.searchParams.set('token', token);
   }
   return wsUrl.toString();
@@ -22,15 +23,18 @@ const invalidateForEvent = (queryClient: QueryClient, eventType?: string) => {
     case 'FIELD_CREATED':
     case 'FIELD_UPDATED':
     case 'FIELD_DELETED':
+      // Field changes update lists and dashboard summaries.
       queryClient.invalidateQueries({ queryKey: ['fields'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       queryClient.invalidateQueries({ queryKey: ['recent-activity'] });
       break;
     case 'NOTIFICATIONS_UPDATED':
+      // Notification changes update the panel + dashboard.
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       break;
     default:
+      // Fallback: refresh the common dashboard datasets.
       queryClient.invalidateQueries({ queryKey: ['fields'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       queryClient.invalidateQueries({ queryKey: ['recent-activity'] });
@@ -61,6 +65,7 @@ export const setupRealtime = (queryClient: QueryClient) => {
         const message = JSON.parse(event.data as string);
         invalidateForEvent(queryClient, message?.type);
       } catch {
+        // If message parsing fails, refresh common data.
         invalidateForEvent(queryClient);
       }
     };
@@ -69,6 +74,7 @@ export const setupRealtime = (queryClient: QueryClient) => {
       if (closed) {
         return;
       }
+      // Force close so onclose can handle backoff/retry.
       socket?.close();
     };
 
@@ -76,6 +82,7 @@ export const setupRealtime = (queryClient: QueryClient) => {
       if (closed) {
         return;
       }
+      // Exponential backoff with cap at 10s.
       retryCount += 1;
       const delay = Math.min(10000, 1000 * 2 ** retryCount);
       window.setTimeout(connect, delay);

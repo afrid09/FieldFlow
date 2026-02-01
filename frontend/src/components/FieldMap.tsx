@@ -41,6 +41,7 @@ export default function FieldMap({ fields }: FieldMapProps) {
 
   const [bbox, setBbox] = useState<Bbox | null>(null);
   const debounceRef = useRef<number | null>(null);
+  // UI mode controls which geo filter is active.
   const [filterMode, setFilterMode] = useState<FilterMode>('bbox');
   const [radiusMeters, setRadiusMeters] = useState(5000);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lon: number } | null>(null);
@@ -58,6 +59,7 @@ export default function FieldMap({ fields }: FieldMapProps) {
       const response = await fieldApi.getByBbox(bbox);
       return response.data;
     },
+    // Only run when bbox is set (after map interaction).
     enabled: !!bbox,
   });
 
@@ -77,6 +79,7 @@ export default function FieldMap({ fields }: FieldMapProps) {
       });
       return response.data;
     },
+    // Nearby mode uses current map center + radius.
     enabled: filterMode === 'nearby' && !!mapCenter,
   });
 
@@ -92,6 +95,7 @@ export default function FieldMap({ fields }: FieldMapProps) {
       const response = await fieldApi.getByPolygon({ polygon });
       return response.data;
     },
+    // Polygon mode is only active when a shape is drawn.
     enabled: filterMode === 'polygon' && !!polygon,
   });
 
@@ -108,6 +112,7 @@ export default function FieldMap({ fields }: FieldMapProps) {
     const ne = bounds.getNorthEast();
 
     const round = (value: number) => Math.round(value * 1e6) / 1e6;
+    // Round to reduce query churn from tiny pan/zoom deltas.
     setBbox({
       minLat: round(sw.lat),
       minLon: round(sw.lng),
