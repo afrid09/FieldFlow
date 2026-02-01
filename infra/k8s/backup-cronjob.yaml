@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fieldflow-backup
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: postgres:15
+              env:
+                - name: PGHOST
+                  value: postgres
+                - name: PGUSER
+                  value: postgres
+                - name: PGPASSWORD
+                  value: postgres
+                - name: PGDATABASE
+                  value: fieldflow
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                  pg_dump -Fc -f /backups/fieldflow_${TIMESTAMP}.dump
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: postgres-pvc

@@ -91,6 +91,7 @@ Set these in your environment or `.env` files for each service.
 
 ## Backups
 - Docker Compose includes `db-backup`, writing daily `pg_dump` files to `./backups`.
+ - See `docs/disaster-recovery.md` for retention and restore steps.
 
 ## CI/CD
 - GitHub Actions workflow runs type checks for frontend and services.

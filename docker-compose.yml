@@ -201,6 +201,10 @@ services:
       PGPASSWORD: postgres
       PGDATABASE: fieldflow
       BACKUP_INTERVAL_SECONDS: 86400
+      BACKUP_DIR: /backups
+      RETENTION_DAYS: 7
+      RETENTION_WEEKS: 4
+      RETENTION_MONTHS: 12
     volumes:
       - ./infra/postgres/backup.sh:/backup/backup.sh:ro
       - ./backups:/backups
