@@ -4,6 +4,7 @@ import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import cors from 'cors';
 import http from 'http';
+import { randomUUID } from 'crypto';
 import WebSocket, { WebSocketServer } from 'ws';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
@@ -23,7 +24,10 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60000);
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 300);
 
-const httpLogger = pinoHttp({ level: process.env.LOG_LEVEL || 'info' });
+const httpLogger = pinoHttp({
+  level: process.env.LOG_LEVEL || 'info',
+  genReqId: (req) => (req.headers['x-request-id'] as string) || randomUUID(),
+});
 
 type Role = 'admin' | 'manager' | 'farmer';
 type AuthUser = { userId: string; role: Role; email?: string };
@@ -36,6 +40,12 @@ app.use(
     origin: CORS_ORIGIN === '*' ? true : CORS_ORIGIN.split(','),
   })
 );
+app.use((req, res, next) => {
+  const requestId = (req.headers['x-request-id'] as string) || randomUUID();
+  res.setHeader('x-request-id', requestId);
+  (req as express.Request & { id?: string }).id = requestId;
+  next();
+});
 app.use(express.json({ limit: '1mb' }));
 app.use(httpLogger);
 
@@ -80,6 +90,7 @@ app.use((req, res, next) => {
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
 const wsClients = new Set<WebSocket>();
+const WS_HEARTBEAT_MS = Number(process.env.WS_HEARTBEAT_MS || 30000);
 
 // Realtime WS connections; optional shared token gate.
 wss.on('connection', (socket, request) => {
@@ -92,8 +103,32 @@ wss.on('connection', (socket, request) => {
     }
   }
 
+  const client = socket as WebSocket & { isAlive?: boolean };
+  client.isAlive = true;
+  client.on('pong', () => {
+    client.isAlive = true;
+  });
+
   wsClients.add(socket);
   socket.on('close', () => wsClients.delete(socket));
+});
+
+const heartbeat = setInterval(() => {
+  for (const client of wsClients) {
+    const tracked = client as WebSocket & { isAlive?: boolean };
+    if (tracked.isAlive === false) {
+      client.terminate();
+      wsClients.delete(client);
+      continue;
+    }
+    tracked.isAlive = false;
+    client.ping();
+  }
+}, Number.isFinite(WS_HEARTBEAT_MS) ? WS_HEARTBEAT_MS : 30000);
+
+wss.on('close', () => clearInterval(heartbeat));
+wss.on('error', (err) => {
+  console.error('WebSocket server error:', err);
 });
 
 // Broadcast internal events to all connected realtime clients.
@@ -148,10 +183,21 @@ const authMiddleware = (req: express.Request, res: express.Response, next: expre
 };
 
 // Proxy helper that injects authenticated user headers downstream.
+const sendProxyError = (res: http.ServerResponse) => {
+  if (res.headersSent) {
+    return;
+  }
+  res.writeHead(502, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ error: 'Bad gateway' }));
+};
+
 const authedProxy = (target: string) =>
   createProxyMiddleware({
     target,
     changeOrigin: true,
+    xfwd: true,
+    timeout: 15000,
+    proxyTimeout: 15000,
     onProxyReq: (proxyReq, req) => {
       const user = (req as express.Request & { user?: AuthUser }).user;
       if (!user) {
@@ -163,6 +209,13 @@ const authedProxy = (target: string) =>
       if (user.email) {
         proxyReq.setHeader('x-user-email', user.email);
       }
+      const requestId = (req as express.Request & { id?: string }).id;
+      if (requestId) {
+        proxyReq.setHeader('x-request-id', requestId);
+      }
+    },
+    onError: (_err, _req, res) => {
+      sendProxyError(res);
     },
   });
 
