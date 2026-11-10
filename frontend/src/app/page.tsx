@@ -29,7 +29,10 @@ export default function Dashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    setRole(localStorage.getItem('auth_role'));
+    const stored = localStorage.getItem('auth_role');
+    const isRole = (value: string | null): value is Role =>
+      value === 'admin' || value === 'manager' || value === 'farmer';
+    setRole(isRole(stored) ? stored : null);
   }, []);
 
   const handleLogout = () => {
