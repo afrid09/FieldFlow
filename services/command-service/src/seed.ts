@@ -6,7 +6,7 @@ import { Pool } from 'pg';
 const DATABASE_URL = process.env.DATABASE_URL || 'postgres://postgres:postgres@postgres:5432/fieldflow';
 const SEED_FILE = process.env.SEED_FILE;
 const SEED_ENV = process.env.SEED_ENV || 'dev';
-const SEEDS_DIR = process.env.SEEDS_DIR || path.resolve(__dirname, '../../infra/seeds');
+const SEEDS_DIR = process.env.SEEDS_DIR || path.resolve(__dirname, '../../../infra/seeds');
 
 const resolveSeedPath = () => {
   if (SEED_FILE) {
