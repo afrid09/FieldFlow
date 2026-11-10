@@ -4,6 +4,10 @@ import jwt from 'jsonwebtoken';
 
 const describeIntegration = process.env.TEST_DATABASE_URL ? describe : describe.skip;
 
+// Both columns are UUIDs in the schema
+const USER_ID = '00000000-0000-4000-8000-000000000001';
+const FIELD_ID = '00000000-0000-4000-8000-000000000101';
+
 describeIntegration('read-service integration', () => {
   let pool: Pool;
   let app: any;
@@ -32,14 +36,14 @@ describeIntegration('read-service integration', () => {
         INSERT INTO users (user_id, email, full_name, role, password_hash)
         VALUES ($1, $2, $3, $4, $5)
       `,
-      ['user-1', 'farmer@example.com', 'Farmer One', 'farmer', 'hash']
+      [USER_ID, 'farmer@example.com', 'Farmer One', 'farmer', 'hash']
     );
     await pool.query(
       `
         INSERT INTO fields (field_id, user_id, field_name, location, area_hectares, status)
         VALUES ($1, $2, $3, ST_GeographyFromText('POINT(-95.7129 37.0902)'), $4, $5)
       `,
-      ['field-1', 'user-1', 'Test Field', 10.5, 'active']
+      [FIELD_ID, USER_ID, 'Test Field', 10.5, 'active']
     );
 
     const mod = await import('../../index');
@@ -54,7 +58,7 @@ describeIntegration('read-service integration', () => {
   });
 
   it('returns nearby fields for a valid token', async () => {
-    const token = jwt.sign({ role: 'farmer', email: 'farmer@example.com' }, 'test-secret', { subject: 'user-1' });
+    const token = jwt.sign({ role: 'farmer', email: 'farmer@example.com' }, 'test-secret', { subject: USER_ID });
     const response = await request(app)
       .get('/api/fields/nearby')
       .set('Authorization', `Bearer ${token}`)
@@ -62,6 +66,6 @@ describeIntegration('read-service integration', () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(1);
-    expect(response.body[0].fieldId).toBe('field-1');
+    expect(response.body[0].fieldId).toBe(FIELD_ID);
   });
 });
