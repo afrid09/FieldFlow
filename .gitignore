@@ -6,4 +6,4 @@ dist
 *.log
 *.tsbuildinfo
 backups
-infra/nginx/certs
+infra/nginx/certscoverage
