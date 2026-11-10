@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1794289844799" clover="3.2.0">
+  <project timestamp="1794289844799" name="All files">
+    <metrics statements="39" coveredstatements="24" conditionals="9" coveredconditionals="5" methods="4" coveredmethods="1" elements="52" coveredelements="30" complexity="0" loc="39" ncloc="39" packages="1" files="1" classes="1"/>
+    <file name="worker.ts" path="/home/claude/fieldflow/services/enrichment-service/src/worker.ts">
+      <metrics statements="39" coveredstatements="24" conditionals="9" coveredconditionals="5" methods="4" coveredmethods="1"/>
+      <line num="2" count="2" type="stmt"/>
+      <line num="5" count="2" type="stmt"/>
+      <line num="9" count="2" type="stmt"/>
+      <line num="11" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="12" count="2" type="stmt"/>
+      <line num="14" count="2" type="stmt"/>
+      <line num="15" count="2" type="cond" truecount="0" falsecount="1"/>
+      <line num="16" count="0" type="stmt"/>
+      <line num="18" count="2" type="stmt"/>
+      <line num="19" count="2" type="stmt"/>
+      <line num="20" count="2" type="stmt"/>
+      <line num="27" count="2" type="cond" truecount="1" falsecount="0"/>
+      <line num="28" count="1" type="stmt"/>
+      <line num="31" count="1" type="stmt"/>
+      <line num="32" count="1" type="stmt"/>
+      <line num="34" count="1" type="stmt"/>
+      <line num="35" count="1" type="stmt"/>
+      <line num="37" count="1" type="stmt"/>
+      <line num="38" count="1" type="stmt"/>
+      <line num="40" count="1" type="stmt"/>
+      <line num="45" count="1" type="stmt"/>
+      <line num="51" count="1" type="stmt"/>
+      <line num="54" count="0" type="stmt"/>
+      <line num="56" count="2" type="stmt"/>
+      <line num="60" count="2" type="stmt"/>
+      <line num="61" count="0" type="cond" truecount="0" falsecount="2"/>
+      <line num="63" count="0" type="stmt"/>
+      <line num="64" count="0" type="stmt"/>
+      <line num="65" count="0" type="stmt"/>
+      <line num="66" count="0" type="stmt"/>
+      <line num="67" count="0" type="stmt"/>
+      <line num="69" count="0" type="stmt"/>
+      <line num="71" count="0" type="stmt"/>
+      <line num="75" count="0" type="stmt"/>
+      <line num="76" count="0" type="stmt"/>
+      <line num="78" count="0" type="stmt"/>
+      <line num="79" count="0" type="stmt"/>
+      <line num="83" count="2" type="cond" truecount="0" falsecount="1"/>
+      <line num="84" count="0" type="stmt"/>
+    </file>
+  </project>
+</coverage>

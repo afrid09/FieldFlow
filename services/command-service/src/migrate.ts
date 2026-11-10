@@ -4,7 +4,7 @@ import path from 'path';
 import { Pool } from 'pg';
 
 const DATABASE_URL = process.env.DATABASE_URL || 'postgres://postgres:postgres@postgres:5432/fieldflow';
-const MIGRATIONS_DIR = process.env.MIGRATIONS_DIR || path.resolve(__dirname, '../../infra/migrations');
+const MIGRATIONS_DIR = process.env.MIGRATIONS_DIR || path.resolve(__dirname, '../../../infra/migrations');
 const MIGRATIONS_DOWN_DIR = process.env.MIGRATIONS_DOWN_DIR || MIGRATIONS_DIR;
 
 const pool = new Pool({ connectionString: DATABASE_URL });

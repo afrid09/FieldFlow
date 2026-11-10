@@ -46,7 +46,9 @@ app.use((req, res, next) => {
   (req as express.Request & { id?: string }).id = requestId;
   next();
 });
-app.use(express.json({ limit: '1mb' }));
+// Do not parse bodies globally: the proxied routes must stream the raw body
+// through untouched, or downstream services wait for a body that never arrives.
+const parseJson = express.json({ limit: '1mb' });
 app.use(httpLogger);
 
 // Basic rate limit for all requests at the gateway edge.
@@ -125,6 +127,9 @@ const heartbeat = setInterval(() => {
     client.ping();
   }
 }, Number.isFinite(WS_HEARTBEAT_MS) ? WS_HEARTBEAT_MS : 30000);
+
+// Do not keep the process alive just for the heartbeat (lets tests and shutdown exit cleanly)
+heartbeat.unref();
 
 wss.on('close', () => clearInterval(heartbeat));
 wss.on('error', (err) => {
@@ -220,7 +225,7 @@ const authedProxy = (target: string) =>
   });
 
 // Internal event fan-out for realtime clients
-app.post('/internal/events', (req, res) => {
+app.post('/internal/events', parseJson, (req, res) => {
   if (INTERNAL_EVENT_SECRET && req.headers['x-internal-secret'] !== INTERNAL_EVENT_SECRET) {
     return res.status(401).json({ error: 'Unauthorized' });
   }

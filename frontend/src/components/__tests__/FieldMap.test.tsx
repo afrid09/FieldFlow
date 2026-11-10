@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import FieldMap from '../FieldMap';
 
 jest.mock('leaflet', () => {
@@ -23,7 +24,9 @@ jest.mock('react-leaflet-draw', () => ({
 
 describe('FieldMap', () => {
   it('renders filter mode buttons', () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
+      <QueryClientProvider client={queryClient}>
       <FieldMap
         fields={[
           {
@@ -36,6 +39,7 @@ describe('FieldMap', () => {
           } as any,
         ]}
       />
+      </QueryClientProvider>
     );
 
     expect(screen.getByText('Viewport')).toBeInTheDocument();
