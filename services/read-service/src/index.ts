@@ -742,4 +742,4 @@ if (require.main === module) {
   });
 }
 
-export { app };
+export { app, pool };

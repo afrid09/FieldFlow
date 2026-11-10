@@ -6,6 +6,7 @@ const describeIntegration = process.env.TEST_DATABASE_URL ? describe : describe.
 describeIntegration('command-service integration', () => {
   let pool: Pool;
   let app: any;
+  let appPool: Pool;
 
   beforeAll(async () => {
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
@@ -28,9 +29,12 @@ describeIntegration('command-service integration', () => {
 
     const mod = await import('../../index');
     app = mod.app;
+    appPool = mod.pool;
   });
 
   afterAll(async () => {
+    // Close the service's own pool too, otherwise Jest never exits
+    await appPool?.end();
     await pool.end();
   });
 
