@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useQuery } from '@tanstack/react-query';
 import { 
   MapPin, 
@@ -19,7 +20,11 @@ import { DashboardStats, FieldSummary, Notification, Role } from '@/types';
 import FieldCard from '@/components/FieldCard';
 import StatsCard from '@/components/StatsCard';
 import NotificationPanel from '@/components/NotificationPanel';
-import FieldMap from '@/components/FieldMap';
+// Leaflet touches `window` on import, so the map is only loaded in the browser
+const FieldMap = dynamic(() => import('@/components/FieldMap'), {
+  ssr: false,
+  loading: () => <div className="h-96 rounded-lg bg-gray-100 animate-pulse" />,
+});
 import RecentActivity from '@/components/RecentActivity';
 
 export default function Dashboard() {
