@@ -126,6 +126,9 @@ const heartbeat = setInterval(() => {
   }
 }, Number.isFinite(WS_HEARTBEAT_MS) ? WS_HEARTBEAT_MS : 30000);
 
+// Do not keep the process alive just for the heartbeat (lets tests and shutdown exit cleanly)
+heartbeat.unref();
+
 wss.on('close', () => clearInterval(heartbeat));
 wss.on('error', (err) => {
   console.error('WebSocket server error:', err);
