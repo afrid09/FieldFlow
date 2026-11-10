@@ -255,5 +255,3 @@ CREATE TRIGGER calculate_field_area_trigger
     WHEN (NEW.boundary IS NOT NULL)
     EXECUTE FUNCTION calculate_field_area();
 
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO postgres;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO postgres;
