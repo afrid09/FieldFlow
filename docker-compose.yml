@@ -1,6 +1,4 @@
 # Purpose: Local/development docker stack.
-version: "3.9"
-
 services:
   postgres:
     image: postgis/postgis:15-3.4
@@ -11,6 +9,11 @@ services:
       POSTGRES_DB: fieldflow
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fieldflow"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -70,7 +73,8 @@ services:
       OTEL_SERVICE_NAME: command-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318/v1/traces
     depends_on:
-      - postgres
+      db-migrate:
+        condition: service_completed_successfully
 
   db-migrate:
     build: ./services/command-service
@@ -82,7 +86,8 @@ services:
       - ./infra/migrations:/app/infra/migrations:ro
     command: ["npm", "run", "migrate"]
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     restart: "no"
 
   db-seed-dev:
@@ -96,7 +101,8 @@ services:
       - ./infra/seeds:/app/infra/seeds:ro
     command: ["npm", "run", "seed:dev"]
     depends_on:
-      - db-migrate
+      db-migrate:
+        condition: service_completed_successfully
     restart: "no"
 
   read-service:
@@ -118,7 +124,8 @@ services:
       OTEL_SERVICE_NAME: read-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318/v1/traces
     depends_on:
-      - postgres
+      db-migrate:
+        condition: service_completed_successfully
 
   enrichment-service:
     build: ./services/enrichment-service
@@ -127,7 +134,8 @@ services:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/fieldflow
       ENRICHMENT_POLL_MS: 10000
     depends_on:
-      - db-migrate
+      db-migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   frontend:
