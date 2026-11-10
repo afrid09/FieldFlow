@@ -120,6 +120,16 @@ services:
     depends_on:
       - postgres
 
+  enrichment-service:
+    build: ./services/enrichment-service
+    container_name: fieldflow-enrichment-service
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/fieldflow
+      ENRICHMENT_POLL_MS: 10000
+    depends_on:
+      - db-migrate
+    restart: unless-stopped
+
   frontend:
     build: ./frontend
     container_name: fieldflow-frontend
